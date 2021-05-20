@@ -1,0 +1,264 @@
+#!/bin/bash
+#file names/locations
+#checking the file name isn't Null, if it is it will use default files
+if [[ "$1" != "" ]]; then
+input="$1"
+else
+echo "Error file name incorrect defaulting to input.txt"
+input="input.txt"
+echo "add  $s0 $s1  $s2" >> "$input"
+echo "sub  $s2 $t0  $t3" >> "$input"
+echo "add  $s0 $s1  $z2" >> "$input"
+echo "lw $t1 8( $t2 )" >> "$input"
+echo "addi  $t3  $s0  -9" >> "$input"
+echo "sw $s3 4( $t0 )" >> "$input"
+echo "lw $t11  70000(  $s0 )" >> "$input"
+fi
+if [[ "$2" != "" ]]; then
+correct="$2"
+echo "" > "$correct"
+else
+echo "Error file name incorrect defaulting to correct.txt"
+correct="correct.txt"
+fi
+if [[ "$3" != "" ]]; then
+	incorrect="$3"
+		echo "" > "$incorrect"
+	else
+		echo "Error file name incorrect defaulting to incorrect.txt"
+		incorrect="incorrect.txt"
+fi
+
+checkRegister()
+{
+    #take the first character of the passed string
+    check1=${str1:0:1}
+    #check the first charcter is correct for a register 
+		if [[ $check1 == "$" ]]; then
+      #take the second character of the passed string
+			check1=${str1:1:1}
+			if [ $check1 == "s" ]; then
+        #take the third character of the passed string
+				check1=${str1:2:2}
+        #check the character is within the correct bounds
+				if [ $check1 -ge 0 ] && [ $check1 -le 7 ]; then
+				    characterCheck="1"
+					return 1	
+				else
+					echo "Error: " "$str1" "Register should be number 0-7"		
+characterCheck="0"
+				fi
+			elif [ $check1 == "t" ]; then
+        #take the third character of the passed string
+				check1=${str1:2:2}
+        #check the character is within the correct bounds
+				if [ $check1 -ge 0 ] && [ $check1 -le 9 ]; then
+				     characterCheck="2"
+					return 2
+				else
+					echo "Error: " "$str1" "Register should be number 0-9"		
+characterCheck="0"
+				fi
+			else
+			     characterCheck="0"
+				echo "Error: " "$str1" "Register should have letter t or s"	
+			fi
+		else
+		echo "Error: " "$str1" "Register should have $ infront"		
+fi
+}
+
+checkNumber()
+{
+if [ $str1 -ge 32769 ] && [ $str1 -le -32769]; then	
+		    failed="1"
+			echo "Error: " "$str1" "should not be greater than 32768 or less than -32768"
+		fi
+    }
+
+removeBracket()
+{
+str1=${str1%?};
+}
+
+checkCommand()
+{
+    failed=0
+    #if the command is add
+    if [[ $command == "add" ]]; then
+	str1="$register1"
+  #check if the first register is how it should be
+	checkRegister
+	if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then	    
+	failed="1"
+	fi
+	str1="$register2"
+  #check if the second register is how it should be
+		checkRegister
+		if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then
+		    	    failed="1"
+	fi  
+	str1="$register3"
+  #check if the third register is how it should be
+		    checkRegister
+		    if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then
+		    failed="1"
+		    fi	
+        #if all the parts are acceptable print the command to a file
+	   if [[ $failed == "0" ]]; then
+	{
+		echo "$line" >> "$correct"
+		echo "command accepted"
+	} 
+else
+echo "command Rejected" 	      
+	fi
+    elif [[ $command == "sub" ]]; then
+	#echo "$command"
+	str1="$register1"
+  #check if the first register is how it should be
+	checkRegister
+	if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then	    
+	failed="1"
+	fi
+	str1="$register2"
+  #check if the first register is how it should be
+		checkRegister
+		if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then
+		    	    failed="1"
+	fi  
+	str1="$register3"
+  #check if the first register is how it should be
+		    checkRegister
+		    if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then
+				    failed="1"
+		fi	
+	   if [[ $failed == "0" ]]; then
+	{
+		echo "$line" >> "$correct"
+		echo "command accepted"
+	}  	
+else
+echo "command Rejected"       
+	fi
+
+
+    elif [[ $command == "addi" ]]; then
+	str1="$register1"
+  #check if the first register is how it should be
+	checkRegister
+	if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then	    
+	  		    	failed="1"
+	fi
+		str1="$register2"
+    #check if the first register is how it should be
+		checkRegister
+	if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then
+		failed="1"
+	fi       
+		str1="$register3" 
+    #check if the first register is how it should be	
+		checkNumber     
+	
+	if [[ $failed == "0" ]]; then
+	{
+		echo "$line" >> "$correct"
+		echo "command accepted"
+	}  	      
+else
+echo "command Rejected" 
+	fi
+
+     elif [[ $command == "lw" ]]; then
+	str1="$register1"
+  #check if the first register is how it should be
+	checkRegister
+	if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then	
+	    failed="1"
+	fi    
+	  	str1="$register2"
+      #check if the first register is how it should be
+		removeBracket
+		if [ $str1 -le -1 ] || [ $str1 -ge 10 ]; then
+	    	failed="1"
+		echo "Error: " "$str1" "should not be greater than 9 or less than 0"
+		fi 
+		    str1="$register3"
+        #check if the first register is how it should be
+		    checkRegister
+		    if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then
+		    failed="1"
+		fi	
+	       	      if [[ $failed == "0" ]]; then
+	{
+		echo "$line" >> "$correct"
+		echo "command accepted"
+	}  
+else
+echo "command Rejected" 	      
+	fi
+	
+    
+elif [[ $command == "sw" ]]; then
+	str1="$register1"
+  #check if the first register is how it should be
+	checkRegister
+	if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then	
+	    failed="1"
+	fi    
+	  	str1="$register2"
+      #check if the first register is how it should be
+		removeBracket
+		if [ $str1 -le -1 ] || [ $str1 -ge 10 ]; then
+	    	failed="1"
+		echo "Error: " "$str1" "should not be greater than 9 or less than 0"
+		fi 
+		    str1="$register3"
+        #check if the first register is how it should be
+		    checkRegister
+		    if [[ $characterCheck != "1" ]] && [[ $characterCheck != "2" ]]; then
+		    failed="1"
+		fi	
+	       	      if [[ $failed == "0" ]]; then
+	{
+		echo "$line" >> "$correct"
+		echo "command accepted"
+	}  
+	else
+		echo "command Rejected" 	      
+	fi
+
+   	else
+     # if the command is not one of the 5 recognised output error
+		echo "error: The instruction mnemonic should be one of add,sub,addi,lw and sw."
+	fi
+  #output failed command to inncorrect text file
+    if  [[ $failed == "1" ]]; then
+  echo "$line" >> "$incorrect"
+    fi
+    
+}
+
+checkNull()
+{
+#check there is the correct number of arguments
+if [[ command = "" ]] || [[ register1 = "" ]] || [[ register2 = "" ]] || [[ register3 = "" ]]; then
+echo "incorrect number or arguments"
+fi
+}
+
+#read the string from input.txt line by line
+while read -r line; do 
+	echo $line
+    #split each line by word
+    set -- $line
+    #store each word in a variable
+    command="$1"
+    register1="$2"
+    register2="$3"
+    register3="$4"
+    checkNull
+
+    checkCommand
+    
+done < "$input"
